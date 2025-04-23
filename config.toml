@@ -4,9 +4,9 @@ name = "Qwen/Qwen2.5-0.5B"        # Model identifier
 
 # Prompt Settings
 [prompt]
-example_prompt = "Once upon a time, there was a"
+example_prompt = "L’administration Trump rétropédale après la panique mondiale des marchés financiers"
 max_prompts = 9
 
 # Display Settings
 [display]
-tokens_to_show = 30          # Number of tokens to display in preview
+tokens_to_show = 10          # Number of tokens to display in preview

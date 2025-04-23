@@ -2,10 +2,10 @@ from ast import literal_eval
 from itertools import cycle
 from src.explorer import Explorer
 from src.utils import entropy_to_color, probability_to_color
-from textual.app import App, ComposeResult, Binding
+from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.reactive import reactive
-from textual.widgets import Footer, Header, Static, DataTable
+from textual.widgets import Footer, Header, Static, DataTable, Input
 from textwrap import dedent
 import sys
 import os
@@ -112,9 +112,27 @@ class TokenExplorer(App):
     def compose(self) -> ComposeResult:
         yield Header()
         with VerticalScroll():
+            yield Input(value=self.explorer.get_prompt(), placeholder="Type your prompt here...", id="prompt_input")
             yield Static(id="results")
             yield DataTable(id="table")
         yield Footer()
+
+    def on_mount(self) -> None:
+        self.query_one("#prompt_input", Input).focus()
+        self.query_one("#results", Static).update(self._render_prompt())
+        table = self.query_one(DataTable)
+        table.add_columns(*self.rows[0])
+        table.add_rows(self.rows[1:])
+        table.cursor_type = "row"
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        # When the user hits Enter in the prompt input, update the prompt and refresh UI
+        new_prompt = event.value
+        self.explorer.set_prompt(new_prompt)
+        self.prompts[self.prompt_index] = new_prompt
+        self.query_one("#results", Static).update(self._render_prompt())
+        self._refresh_table()
+
 
     def _refresh_table(self):
         table = self.query_one(DataTable)
@@ -174,13 +192,6 @@ class TokenExplorer(App):
 [bold]Struct[/bold] {self._render_structure_section()}
 """)
     
-    def on_mount(self) -> None:
-        self.query_one("#results", Static).update(self._render_prompt())
-        table = self.query_one(DataTable)
-        table.add_columns(*self.rows[0])
-        table.add_rows(self.rows[1:])
-        table.cursor_type = "row"
-
     def action_next_struct(self):
         self.current_struct_index = (self.current_struct_index + 1) % len(self.regex_structs)
         self.query_one("#results", Static).update(self._render_prompt())
@@ -204,6 +215,7 @@ class TokenExplorer(App):
             self.prompts.append(self.explorer.get_prompt())
             self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
             self.explorer.set_prompt(self.prompts[self.prompt_index])
+            self.query_one("#prompt_input", Input).value = self.prompts[self.prompt_index]
             self.query_one("#results", Static).update(self._render_prompt())
             self._refresh_table()
 
@@ -212,18 +224,21 @@ class TokenExplorer(App):
             self.prompts.pop(self.prompt_index)
             self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
             self.explorer.set_prompt(self.prompts[self.prompt_index])
+            self.query_one("#prompt_input", Input).value = self.prompts[self.prompt_index]
             self.query_one("#results", Static).update(self._render_prompt())
             self._refresh_table()
     
     def action_increment_prompt(self):
         self.prompt_index = (self.prompt_index + 1) % len(self.prompts)
         self.explorer.set_prompt(self.prompts[self.prompt_index])
+        self.query_one("#prompt_input", Input).value = self.prompts[self.prompt_index]
         self.query_one("#results", Static).update(self._render_prompt())
         self._refresh_table()
 
     def action_decrement_prompt(self):
         self.prompt_index = (self.prompt_index - 1) % len(self.prompts)
         self.explorer.set_prompt(self.prompts[self.prompt_index])
+        self.query_one("#prompt_input", Input).value = self.prompts[self.prompt_index]
         self.query_one("#results", Static).update(self._render_prompt())
         self._refresh_table()
 
