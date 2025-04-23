@@ -107,21 +107,34 @@ class TokenExplorer(App):
         # Define the header row
         header = ("token_id", "token", "%", "Bar")
         
-        # Process each token to create data rows
+        # Helper for green gradient: gray (low) -> yellow (mid) -> green (high)
+        def confidence_color(prob):
+            if prob < 0.5:
+                # Linear blend gray (180,180,180) to yellow (220,220,100)
+                t = prob / 0.5
+                r = int(180 + (220-180)*t)
+                g = int(180 + (220-180)*t)
+                b = int(180 + (100-180)*t)
+            else:
+                # Linear blend yellow (220,220,100) to green (80,220,80)
+                t = (prob-0.5)/0.5
+                r = int(220 + (80-220)*t)
+                g = int(220)
+                b = int(100 + (80-100)*t)
+            return f"rgb({r},{g},{b})"
+        
         data_rows = []
         for token in tokens:
             prob = token["probability"]
-            # Format probability as percentage string
             percentage_str = f"{prob * 100:.0f}%"
-            # Calculate bar length (0-10 blocks)
             bar_length = int(round(prob * 10))
-            # Create the colored bar string
-            bar_str = f"[on {probability_to_color(prob)}]{'█' * bar_length:<10}" # Pad with spaces to ensure alignment
-            
+            bar_color = confidence_color(prob)
+            filled = f"[#{''.join(f'{x:02x}' for x in [int(s) for s in bar_color[4:-1].split(',')])}]" + ("█" * bar_length) + "[/]"
+            # If bar_length < 10, pad with spaces for alignment
+            bar_str = filled + (" " * (10 - bar_length))
             data_rows.append(
                 (token["token_id"], token["token"], percentage_str, bar_str)
             )
-            
         return [header] + data_rows
         
     def compose(self) -> ComposeResult:
