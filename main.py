@@ -104,10 +104,25 @@ class TokenExplorer(App):
             return []
 
     def _top_tokens_to_rows(self, tokens):
-        return [("token_id", "token", "prob")] + [
-            (token["token_id"], token["token"], token["probability"])
-            for token in tokens
-        ]
+        # Define the header row
+        header = ("token_id", "token", "%", "Bar")
+        
+        # Process each token to create data rows
+        data_rows = []
+        for token in tokens:
+            prob = token["probability"]
+            # Format probability as percentage string
+            percentage_str = f"{prob * 100:.0f}%"
+            # Calculate bar length (0-10 blocks)
+            bar_length = int(round(prob * 10))
+            # Create the colored bar string
+            bar_str = f"[on {probability_to_color(prob)}]{'█' * bar_length:<10}" # Pad with spaces to ensure alignment
+            
+            data_rows.append(
+                (token["token_id"], token["token"], percentage_str, bar_str)
+            )
+            
+        return [header] + data_rows
         
     def compose(self) -> ComposeResult:
         yield Header()
@@ -121,7 +136,9 @@ class TokenExplorer(App):
         self.query_one("#prompt_input", Input).focus()
         self.query_one("#results", Static).update(self._render_prompt())
         table = self.query_one(DataTable)
-        table.add_columns(*self.rows[0])
+        # Use the first element of self.rows (which is the header) for columns
+        table.add_columns(*self.rows[0]) 
+        # Add the data rows (all rows except the header)
         table.add_rows(self.rows[1:])
         table.cursor_type = "row"
 
