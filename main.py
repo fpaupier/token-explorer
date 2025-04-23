@@ -146,7 +146,7 @@ class TokenExplorer(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one("#prompt_input", Input).focus()
+        # Do not focus the prompt input by default; start in menu mode
         self.query_one("#results", Static).update(self._render_prompt())
         table = self.query_one(DataTable)
         # Use the first element of self.rows (which is the header) for columns
